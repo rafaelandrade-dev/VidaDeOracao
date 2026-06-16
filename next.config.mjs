@@ -1,4 +1,6 @@
-import type { NextConfig } from 'next'
+import { createRequire } from 'module'
+const require = createRequire(import.meta.url)
+
 const withPWA = require('next-pwa')({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
@@ -6,8 +8,9 @@ const withPWA = require('next-pwa')({
   skipWaiting: true,
 })
 
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   // add project-specific Next.js config here
 }
 
-module.exports = withPWA(nextConfig)
+export default withPWA(nextConfig)
