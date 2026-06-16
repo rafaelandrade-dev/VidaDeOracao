@@ -20,33 +20,45 @@ export default function PrayerPage({ params }: { params: { slug: string } }) {
 
   return (
     <div className="min-h-screen bg-night">
-      {/* Header manual com botão voltar */}
+
+      {/* Header com voltar */}
       <header className="flex items-center justify-between px-5 py-4 border-b border-dawn">
-        <Link href="/oracoes" className="text-mist text-sm flex items-center gap-1">
-          ‹ Voltar
+        <Link
+          href="/oracoes"
+          className="flex items-center gap-1 text-mist text-sm hover:text-stone transition-colors"
+        >
+          ‹ Orações
         </Link>
-        <span className="text-2xl">{prayer.icon}</span>
-        <div className="w-12" /> {/* espaçador para centralizar o ícone */}
+        <span className="text-xl">{prayer.icon}</span>
+        <div className="w-16" />
       </header>
 
-      <main className="max-w-lg mx-auto px-5 py-6 pb-32 flex flex-col gap-6">
+      <main className="max-w-lg mx-auto px-5 py-6 pb-36 flex flex-col gap-6">
+
+        {/* Título */}
         <div className="animate-fade-up">
-          <h1 className="font-display text-2xl text-cream font-semibold mb-1">
+          <h1 className="font-display text-2xl text-cream font-semibold">
             {prayer.title}
           </h1>
-          <p className="text-stone text-sm">{prayer.description}</p>
+          <p className="text-stone text-sm mt-1">{prayer.description}</p>
         </div>
 
-        <div className="bg-dusk rounded-2xl p-5 border border-dawn animate-fade-up">
-          <p className="text-cream text-base leading-relaxed whitespace-pre-line">
+        {/* Texto da oração */}
+        <div className="bg-dusk rounded-2xl border border-dawn p-6 animate-fade-up">
+          <p className="text-cream text-base leading-loose whitespace-pre-line font-body">
             {prayer.text}
           </p>
         </div>
+
       </main>
 
-      {/* Botão fixo na base, acima da bottom nav */}
-      <div className="fixed bottom-16 left-0 right-0 px-5 pb-2 bg-night/90 backdrop-blur-sm">
-        <PrayButton label="🙏 Orei esta oração" />
+      {/* Botão fixo */}
+      <div className="fixed bottom-16 left-0 right-0 px-5 pb-2">
+        <div className="max-w-lg mx-auto">
+          <div className="bg-night/80 backdrop-blur-sm pt-3 rounded-t-2xl">
+            <PrayButton label="🙏 Orei esta oração" />
+          </div>
+        </div>
       </div>
 
       <BottomNav />
