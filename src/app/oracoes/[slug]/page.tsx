@@ -46,7 +46,7 @@ export default function PrayerPage({ params }: { params: { slug: string } }) {
 
       {/* Botão fixo na base, acima da bottom nav */}
       <div className="fixed bottom-16 left-0 right-0 px-5 pb-2 bg-night/90 backdrop-blur-sm">
-        <PrayButton />
+        <PrayButton label="🙏 Orei esta oração" />
       </div>
 
       <BottomNav />

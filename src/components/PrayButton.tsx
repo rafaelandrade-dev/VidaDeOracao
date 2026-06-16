@@ -5,9 +5,14 @@ import { useSession } from '@/components/SupabaseProvider'
 
 type State = 'idle' | 'loading' | 'done'
 
-export function PrayButton() {
+interface PrayButtonProps {
+  initialDone?: boolean
+  label?: string
+}
+
+export function PrayButton({ initialDone = false, label = '🙏 Orei hoje' }: PrayButtonProps) {
   const session = useSession()
-  const [state, setState] = useState<State>('idle')
+  const [state, setState] = useState<State>(initialDone ? 'done' : 'idle')
 
   const handlePray = async () => {
     if (!session || state !== 'idle') return
@@ -55,7 +60,7 @@ export function PrayButton() {
           Salvando…
         </span>
       ) : (
-        '🙏 Orei esta oração'
+        label
       )}
     </button>
   )

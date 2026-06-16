@@ -1,101 +1,118 @@
-import Image from "next/image";
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { createSupabaseServer } from '@/lib/supabase-server'
+import { Header } from '@/components/Header'
+import { BottomNav } from '@/components/BottomNav'
+import { PrayButton } from '@/components/PrayButton'
 
-export default function Home() {
+const DAY_LABELS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+
+export default async function HomePage() {
+  const supabase = await createSupabaseServer()
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (!session) redirect('/login')
+
+  const today = new Date().toISOString().split('T')[0]
+
+  const sevenDaysAgo = new Date()
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
+  const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0]
+
+  const [{ data: streak }, { data: logs }] = await Promise.all([
+    supabase
+      .from('streaks')
+      .select('current_streak, longest_streak')
+      .eq('user_id', session.user.id)
+      .single(),
+    supabase
+      .from('prayer_logs')
+      .select('prayed_at')
+      .eq('user_id', session.user.id)
+      .gte('prayed_at', sevenDaysAgoStr),
+  ])
+
+  const prayedDates = new Set(logs?.map((l) => l.prayed_at) ?? [])
+  const prayedToday = prayedDates.has(today)
+  const currentStreak = streak?.current_streak ?? 0
+
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date()
+    date.setDate(date.getDate() - (6 - i))
+    const dateStr = date.toISOString().split('T')[0]
+    return {
+      key: dateStr,
+      label: DAY_LABELS[date.getDay()],
+      prayed: prayedDates.has(dateStr),
+      isToday: i === 6,
+    }
+  })
+
+  const firstName = session.user.user_metadata?.full_name?.split(' ')[0] ?? 'você'
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-night">
+      <Header title="Vida de Oração" />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      <main className="max-w-lg mx-auto px-5 py-6 pb-24 flex flex-col gap-6">
+        <p className="text-stone text-sm">Olá, {firstName} 👋</p>
+
+        {/* Streak */}
+        <div className="flex flex-col items-center gap-1 py-4">
+          <span
+            className={`font-mono text-6xl font-medium transition-colors
+              ${currentStreak === 0 ? 'text-mist' : 'text-gold'}
+              ${currentStreak >= 7 ? 'animate-gold-glow' : ''}`}
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            {currentStreak}
+          </span>
+          <div className="flex items-center gap-1 text-stone text-sm">
+            <span>{currentStreak >= 30 ? '✨' : '🔥'}</span>
+            <span>dias seguidos</span>
+          </div>
         </div>
+
+        {/* Botão principal */}
+        <PrayButton initialDone={prayedToday} label="🙏 Orei hoje" />
+
+        {/* Mini calendário */}
+        <div className="bg-dusk rounded-2xl p-5 border border-dawn">
+          <p className="text-[10px] font-medium tracking-widest uppercase text-gold mb-4">
+            Últimos 7 dias
+          </p>
+          <div className="flex justify-between">
+            {days.map((day) => (
+              <div key={day.key} className="flex flex-col items-center gap-1">
+                <div
+                  className={`w-9 h-9 rounded-full border-2 transition-colors
+                    ${day.prayed ? 'bg-gold border-gold' : 'bg-transparent border-mist'}
+                    ${day.isToday ? 'ring-2 ring-gold ring-offset-2 ring-offset-night' : ''}`}
+                />
+                <span className="text-[10px] text-stone">{day.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Acesso rápido às orações */}
+        <Link
+          href="/oracoes"
+          className="bg-dusk rounded-2xl p-5 border border-dawn
+                     flex items-center justify-between
+                     active:scale-[0.98] transition-transform"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🙏</span>
+            <div>
+              <p className="text-cream font-medium">Orações</p>
+              <p className="text-stone text-sm">7 orações disponíveis</p>
+            </div>
+          </div>
+          <span className="text-mist text-lg">›</span>
+        </Link>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+      <BottomNav />
     </div>
-  );
+  )
 }
